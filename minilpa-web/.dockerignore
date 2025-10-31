@@ -2,8 +2,8 @@
 node_modules/
 client/node_modules/
 
-# Build outputs
-client/dist/
+# Build outputs（如果使用本地构建版，需要注释掉 client/dist/）
+# client/dist/
 dist/
 build/
 
