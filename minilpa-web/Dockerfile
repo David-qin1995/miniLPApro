@@ -4,7 +4,8 @@
 # ========================================
 
 # 构建阶段 - 前端
-FROM node:16-alpine AS frontend-builder
+# 使用多平台支持，指定平台为 linux/amd64（兼容服务器架构）
+FROM --platform=linux/amd64 node:16-alpine AS frontend-builder
 
 WORKDIR /app
 
@@ -28,7 +29,8 @@ RUN npm run build
 
 # ========================================
 # 生产阶段
-FROM node:16-alpine
+# 使用多平台支持，指定平台为 linux/amd64（兼容服务器架构）
+FROM --platform=linux/amd64 node:16-alpine
 
 # 设置工作目录
 WORKDIR /app

@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # 配置
-IMAGE_NAME="davidqin1995/minilpa-web"  # Docker Hub 用户名/镜像名
+IMAGE_NAME="jasonqin95/minilpa-web"  # Docker Hub 用户名/镜像名
 # 或使用国内镜像仓库
 # IMAGE_NAME="registry.cn-hangzhou.aliyuncs.com/your-namespace/minilpa-web"
 VERSION="${1:-latest}"  # 版本号，默认为 latest

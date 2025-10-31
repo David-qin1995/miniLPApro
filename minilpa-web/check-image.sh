@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # 配置（与 build-and-push.sh 保持一致）
-IMAGE_NAME="${1:-davidqin1995/minilpa-web}"
+IMAGE_NAME="${1:-jasonqin95/minilpa-web}"
 IMAGE_TAG="${2:-latest}"
 
 FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"

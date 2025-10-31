@@ -15,7 +15,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # 配置
-IMAGE_NAME="davidqin1995/minilpa-web"
+IMAGE_NAME="jasonqin95/minilpa-web"
 IMAGE_TAG="${1:-latest}"
 
 echo "╔═══════════════════════════════════════════════════════════════╗"
@@ -113,12 +113,23 @@ echo ""
 # 停止旧容器
 echo -e "${BLUE}[4/5] 停止旧容器...${NC}"
 $DOCKER_COMPOSE -f docker-compose.image.yml down 2>/dev/null || true
+$DOCKER_COMPOSE -f docker-compose.image-baota.yml down 2>/dev/null || true
 echo -e "${GREEN}✅ 旧容器已停止${NC}"
 echo ""
 
 # 启动新容器
 echo -e "${BLUE}[5/5] 启动容器...${NC}"
-$DOCKER_COMPOSE -f docker-compose.image.yml up -d
+
+# 检测是否在宝塔环境（80/443 端口被占用时使用宝塔专用配置）
+if lsof -i:80 2>/dev/null | grep -q nginx || lsof -i:443 2>/dev/null | grep -q nginx; then
+    echo -e "${YELLOW}⚠️  检测到宝塔 Nginx 在使用 80/443 端口，使用宝塔专用配置${NC}"
+    COMPOSE_FILE="docker-compose.image-baota.yml"
+    # 只启动应用容器，不启动 Nginx 容器（由宝塔 Nginx 代理）
+    docker-compose -f docker-compose.image-baota.yml up -d minilpa-web
+else
+    COMPOSE_FILE="docker-compose.image.yml"
+    $DOCKER_COMPOSE -f docker-compose.image.yml up -d
+fi
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ 容器启动成功${NC}"
@@ -136,7 +147,10 @@ sleep 5
 # 检查容器状态
 echo ""
 echo -e "${BLUE}容器状态:${NC}"
-$DOCKER_COMPOSE -f docker-compose.image.yml ps
+if [ -z "$COMPOSE_FILE" ]; then
+    COMPOSE_FILE="docker-compose.image.yml"
+fi
+$DOCKER_COMPOSE -f "$COMPOSE_FILE" ps
 echo ""
 
 # 健康检查
