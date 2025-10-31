@@ -1,112 +1,110 @@
 #!/bin/bash
 
 # ========================================
-# 推送镜像到 jasonqin95 仓库
+# 重新构建 AMD64 镜像（兼容服务器）
 # ========================================
 
 set -e
 
 echo "╔═══════════════════════════════════════════════════════════════╗"
 echo "║                                                               ║"
-echo "║  🐳 推送镜像到 jasonqin95/minilpa-web                         ║"
+echo "║  🐳 重新构建 AMD64 镜像（兼容 x86_64 服务器）                ║"
 echo "║                                                               ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
 
-# 1. Tag 镜像（如果源镜像名称不同）
+IMAGE_NAME="jasonqin95/minilpa-web"
+VERSION="latest"
+
+# 检查是否在项目目录
+if [ ! -f "Dockerfile" ]; then
+    echo "❌ 错误：请在项目根目录运行此脚本！"
+    exit 1
+fi
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "[1/4] 检查并 Tag 镜像..."
+echo "[1/4] 清理旧镜像..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# 检查本地镜像是否存在
-if docker images | grep -q "jasonqin95/minilpa-web.*latest"; then
-    echo "✅ 目标镜像已存在，跳过 Tag"
-else
-    # 尝试从 davidqin1995 镜像 Tag
-    if docker images | grep -q "davidqin1995/minilpa-web.*latest"; then
-        echo "📋 从 davidqin1995 镜像创建 Tag..."
-        docker tag davidqin1995/minilpa-web:latest jasonqin95/minilpa-web:latest 2>/dev/null || true
-        docker tag davidqin1995/minilpa-web:v1.0.0 jasonqin95/minilpa-web:v1.0.0 2>/dev/null || true
-    else
-        echo "⚠️  未找到源镜像，请先构建："
-        echo "   bash 重新构建AMD64镜像.sh"
-        exit 1
-    fi
-fi
+docker rmi ${IMAGE_NAME}:${VERSION} 2>/dev/null || echo "⚠️  旧镜像不存在，跳过清理"
+docker rmi ${IMAGE_NAME}:v1.0.0 2>/dev/null || echo "⚠️  旧镜像不存在，跳过清理"
 
-# 确保 v1.0.0 标签存在
-if ! docker images | grep -q "jasonqin95/minilpa-web.*v1.0.0"; then
-    docker tag jasonqin95/minilpa-web:latest jasonqin95/minilpa-web:v1.0.0
-fi
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "[2/4] 构建 AMD64 镜像..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# 构建 AMD64 镜像
+docker build --platform linux/amd64 -t ${IMAGE_NAME}:${VERSION} .
 
 if [ $? -eq 0 ]; then
-    echo "✅ Tag 完成"
+    echo "✅ 镜像构建成功"
+else
+    echo "❌ 镜像构建失败"
+    exit 1
+fi
+
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "[3/4] 标记版本..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:v1.0.0
+
+if [ $? -eq 0 ]; then
+    echo "✅ 版本标记完成"
     echo ""
-    docker images | grep "jasonqin95/minilpa-web"
+    docker images | grep "${IMAGE_NAME}"
 else
-    echo "❌ Tag 失败"
+    echo "❌ 版本标记失败"
     exit 1
 fi
 
 echo ""
 
-# 2. 登录 Docker Hub
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "[2/4] 登录 Docker Hub..."
+echo "[4/4] 验证镜像平台..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-docker login
+# 检查镜像平台信息
+IMAGE_INFO=$(docker inspect ${IMAGE_NAME}:${VERSION} | grep -A 10 '"Architecture"')
+echo "镜像信息："
+echo "$IMAGE_INFO" | head -5
 
-if [ $? -eq 0 ]; then
-    echo "✅ 登录成功"
+ARCH=$(docker inspect ${IMAGE_NAME}:${VERSION} --format='{{.Architecture}}')
+OS=$(docker inspect ${IMAGE_NAME}:${VERSION} --format='{{.Os}}')
+
+echo ""
+echo "平台: ${OS}/${ARCH}"
+
+if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ]; then
+    echo "✅ 镜像架构正确（AMD64）"
 else
-    echo "❌ 登录失败"
-    exit 1
+    echo "⚠️  警告：镜像架构为 ${ARCH}，可能不兼容服务器"
 fi
-
-echo ""
-
-# 3. 推送镜像
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "[3/4] 推送镜像到 Docker Hub..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-docker push jasonqin95/minilpa-web:latest
-docker push jasonqin95/minilpa-web:v1.0.0
-
-if [ $? -eq 0 ]; then
-    echo "✅ 推送成功"
-else
-    echo "❌ 推送失败"
-    exit 1
-fi
-
-echo ""
-
-# 4. 验证推送
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "[4/4] 验证推送..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-bash check-image.sh jasonqin95/minilpa-web latest
 
 echo ""
 echo "╔═══════════════════════════════════════════════════════════════╗"
 echo "║                                                               ║"
-echo "║  ✅ 镜像推送完成！                                           ║"
+echo "║  ✅ 镜像构建完成！                                           ║"
 echo "║                                                               ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
-echo "🌐 镜像地址:"
-echo "  • jasonqin95/minilpa-web:latest"
-echo "  • jasonqin95/minilpa-web:v1.0.0"
+echo "📦 镜像列表："
+echo "  • ${IMAGE_NAME}:${VERSION}"
+echo "  • ${IMAGE_NAME}:v1.0.0"
 echo ""
-echo "📦 在服务器上拉取:"
-echo "  docker pull jasonqin95/minilpa-web:latest"
-echo "  或使用部署脚本: bash docker-pull-deploy.sh"
+echo "🚀 下一步："
+echo "  1. 登录 Docker Hub: docker login"
+echo "  2. 推送镜像: bash 推送镜像到jasonqin95.sh"
+echo "  或手动推送:"
+echo "    docker push ${IMAGE_NAME}:${VERSION}"
+echo "    docker push ${IMAGE_NAME}:v1.0.0"
 echo ""
 
