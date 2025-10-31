@@ -6,13 +6,19 @@
 # 构建阶段 - 前端
 FROM node:16-alpine AS frontend-builder
 
+WORKDIR /app
+
+# 复制 npm 配置文件（如果有）
+COPY .npmrc* ./
+
 WORKDIR /app/client
 
 # 复制前端依赖文件
 COPY client/package*.json ./
 
-# 安装依赖
-RUN npm install --registry=https://registry.npmmirror.com
+# 安装依赖（增加超时和重试机制）
+RUN npm install --verbose || \
+    (npm config set registry https://registry.npmjs.org/ && npm install --verbose)
 
 # 复制前端源码
 COPY client/ ./
@@ -33,12 +39,18 @@ RUN npm install -g pm2
 # 复制后端依赖文件
 COPY package*.json ./
 
-# 安装后端依赖（生产环境）
-RUN npm install --production --registry=https://registry.npmmirror.com
+# 复制 npm 配置文件（如果有）
+COPY .npmrc* ./
+
+# 安装后端依赖（生产环境，增加超时和重试机制）
+RUN npm install --production --verbose || \
+    (npm config set registry https://registry.npmjs.org/ && npm install --production --verbose)
 
 # 复制后端代码
 COPY server/ ./server/
 COPY ecosystem.config.js ./
+
+# 复制环境变量模板
 COPY .env.example ./.env
 
 # 从构建阶段复制前端构建文件
