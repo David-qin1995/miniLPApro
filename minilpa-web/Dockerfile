@@ -17,15 +17,16 @@ WORKDIR /app/client
 # 复制前端依赖文件（先复制 package 文件，利用 Docker 缓存）
 COPY client/package*.json ./
 
-# 安装依赖（使用 npm ci 更快，或安装时增加缓存）
-# 设置 npm 配置（超时、重试、缓存）
-RUN npm config set registry https://registry.npmmirror.com/ && \
-    npm config set fetch-timeout 600000 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set progress false && \
-    npm install --silent || \
-    (npm config set registry https://registry.npmjs.org/ && npm install --silent)
+# 复制 .npmrc 配置文件（优先使用配置文件，避免多次 npm config set）
+COPY .npmrc* ./
+
+# 安装依赖（使用 .npmrc 配置，更高效）
+RUN npm install --silent --prefer-offline --no-audit --no-fund || \
+    (npm config set registry https://registry.npmjs.org/ && \
+     npm config set fetch-timeout 600000 && \
+     npm config set fetch-retry-mintimeout 20000 && \
+     npm config set fetch-retry-maxtimeout 120000 && \
+     npm install --silent --prefer-offline --no-audit --no-fund)
 
 # 复制前端源码（在依赖安装后复制，最大化缓存利用）
 COPY client/ ./
@@ -53,9 +54,13 @@ COPY package*.json ./
 # 复制 npm 配置文件（如果有）
 COPY .npmrc* ./
 
-# 安装后端依赖（生产环境，增加超时和重试机制）
-RUN npm install --production --verbose || \
-    (npm config set registry https://registry.npmjs.org/ && npm install --production --verbose)
+# 安装后端依赖（生产环境，使用 .npmrc 配置，更高效）
+RUN npm install --production --silent --prefer-offline --no-audit --no-fund || \
+    (npm config set registry https://registry.npmjs.org/ && \
+     npm config set fetch-timeout 600000 && \
+     npm config set fetch-retry-mintimeout 20000 && \
+     npm config set fetch-retry-maxtimeout 120000 && \
+     npm install --production --silent --prefer-offline --no-audit --no-fund)
 
 # 复制后端代码
 COPY server/ ./server/
