@@ -17,10 +17,7 @@ WORKDIR /app/client
 # 复制前端依赖文件（先复制 package 文件，利用 Docker 缓存）
 COPY client/package*.json ./
 
-# 复制 .npmrc 配置文件（优先使用配置文件，避免多次 npm config set）
-COPY .npmrc* ./
-
-# 安装依赖（使用 .npmrc 配置，更高效）
+# 安装依赖（使用已复制的 .npmrc 配置，更高效）
 RUN npm install --silent --prefer-offline --no-audit --no-fund || \
     (npm config set registry https://registry.npmjs.org/ && \
      npm config set fetch-timeout 600000 && \
