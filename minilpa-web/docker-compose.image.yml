@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # MiniLPA Web 应用（从镜像仓库拉取）
+  minilpa-web:
+    # 使用镜像而不是构建
+    image: davidqin1995/minilpa-web:latest
+    # 或者使用国内镜像仓库
+    # image: registry.cn-hangzhou.aliyuncs.com/your-namespace/minilpa-web:latest
+    container_name: minilpa-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - CORS_ORIGIN=https://esim.haoyiseo.com
+      - USE_MOCK_DATA=true
+    volumes:
+      # 持久化数据
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+      # 环境变量文件
+      - ./.env:/app/.env:ro
+    networks:
+      - minilpa-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx 反向代理（使用官方镜像）
+  nginx:
+    image: nginx:alpine
+    container_name: minilpa-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Nginx 配置
+      - ./nginx-docker.conf:/etc/nginx/conf.d/default.conf:ro
+      # 日志
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - minilpa-web
+    networks:
+      - minilpa-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  minilpa-network:
+    driver: bridge
+
