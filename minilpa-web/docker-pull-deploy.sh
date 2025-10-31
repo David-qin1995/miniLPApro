@@ -123,9 +123,23 @@ echo -e "${BLUE}[5/5] 启动容器...${NC}"
 # 检测是否在宝塔环境（80/443 端口被占用时使用宝塔专用配置）
 if lsof -i:80 2>/dev/null | grep -q nginx || lsof -i:443 2>/dev/null | grep -q nginx; then
     echo -e "${YELLOW}⚠️  检测到宝塔 Nginx 在使用 80/443 端口，使用宝塔专用配置${NC}"
-    COMPOSE_FILE="docker-compose.image-baota.yml"
-    # 只启动应用容器，不启动 Nginx 容器（由宝塔 Nginx 代理）
-    docker-compose -f docker-compose.image-baota.yml up -d minilpa-web
+    
+    # 检查宝塔专用配置文件是否存在
+    if [ ! -f "docker-compose.image-baota.yml" ]; then
+        echo -e "${RED}❌ 错误：docker-compose.image-baota.yml 文件不存在！${NC}"
+        echo -e "${YELLOW}💡 解决方案：${NC}"
+        echo "  1. 拉取最新代码: git pull origin main"
+        echo "  2. 或使用标准配置: docker-compose -f docker-compose.image.yml up -d minilpa-web"
+        echo ""
+        echo -e "${BLUE}使用标准配置继续...${NC}"
+        COMPOSE_FILE="docker-compose.image.yml"
+        # 只启动应用容器，不启动 Nginx（由宝塔 Nginx 代理）
+        docker-compose -f docker-compose.image.yml up -d minilpa-web
+    else
+        COMPOSE_FILE="docker-compose.image-baota.yml"
+        # 只启动应用容器，不启动 Nginx 容器（由宝塔 Nginx 代理）
+        docker-compose -f docker-compose.image-baota.yml up -d minilpa-web
+    fi
 else
     COMPOSE_FILE="docker-compose.image.yml"
     $DOCKER_COMPOSE -f docker-compose.image.yml up -d
