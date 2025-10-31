@@ -17,7 +17,7 @@ fi
 # 检查是否在正确的目录
 if [ ! -f "package.json" ]; then
     echo "❌ 错误：请在项目根目录运行此脚本！"
-    echo "cd /www/wwwroot/minilpa"
+    echo "cd /www/wwwroot/minilpa-web"
     exit 1
 fi
 

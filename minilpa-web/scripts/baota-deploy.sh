@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 配置
-PROJECT_DIR="/www/wwwroot/minilpa"
+PROJECT_DIR="/www/wwwroot/minilpa-web"
 APP_NAME="minilpa"
 DOMAIN="esim.haoyiseo.com"  # 您的域名
 
