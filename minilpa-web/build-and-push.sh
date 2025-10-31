@@ -101,6 +101,36 @@ if [ $? -eq 0 ]; then
     echo "  ${IMAGE_NAME}:${VERSION}"
     echo "  ${IMAGE_NAME}:latest"
     echo ""
+    
+    # 验证推送（检查镜像是否存在）
+    echo -e "${BLUE}🔍 验证镜像推送状态...${NC}"
+    echo ""
+    
+    # 如果是 Docker Hub，检查镜像是否存在
+    if [[ "$IMAGE_NAME" =~ ^[^/]+/[^/]+$ ]] && [[ ! "$IMAGE_NAME" =~ registry\. ]]; then
+        HUB_URL="https://hub.docker.com/v2/repositories/${IMAGE_NAME}/tags/${VERSION}/"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HUB_URL" 2>/dev/null || echo "000")
+        
+        if [ "$HTTP_CODE" = "200" ]; then
+            echo -e "${GREEN}✅ 验证成功：镜像已存在于 Docker Hub${NC}"
+            echo ""
+            echo "查看镜像: https://hub.docker.com/r/${IMAGE_NAME}/tags"
+        elif [ "$HTTP_CODE" = "404" ]; then
+            echo -e "${YELLOW}⚠️  镜像可能还未同步到 Hub（等待几秒后重试）${NC}"
+            echo ""
+            echo "手动验证: bash check-image.sh ${IMAGE_NAME} ${VERSION}"
+        else
+            echo -e "${YELLOW}⚠️  无法验证（网络问题），请手动检查${NC}"
+            echo ""
+            echo "验证命令: bash check-image.sh ${IMAGE_NAME} ${VERSION}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  使用第三方仓库，请手动验证${NC}"
+        echo ""
+        echo "验证命令: bash check-image.sh ${IMAGE_NAME} ${VERSION}"
+    fi
+    
+    echo ""
     echo -e "${YELLOW}在服务器上拉取并运行:${NC}"
     echo "  docker pull ${IMAGE_NAME}:latest"
     echo "  或使用部署脚本: bash docker-pull-deploy.sh"
