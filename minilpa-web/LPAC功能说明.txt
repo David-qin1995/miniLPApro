@@ -1,0 +1,137 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║              ⚡ LPAC 功能已集成到项目                         ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+## ✨ 新增功能
+
+您的 MiniLPA Web 项目现在支持两种模式：
+
+1️⃣  模拟模式（默认）
+   • 使用数据库模拟数据
+   • 不需要任何硬件
+   • 适合开发和测试
+   • 配置: USE_MOCK_DATA=true
+
+2️⃣  真实模式（可选）
+   • 使用 lpac 与真实 eUICC 通信
+   • 需要安装 lpac 和硬件
+   • 适合实际使用
+   • 配置: USE_MOCK_DATA=false
+
+## 📂 新增文件
+
+server/lpac/
+├── executor.js        # lpac 命令执行器
+└── service.js         # lpac 业务逻辑服务
+
+server/routes/
+└── lpac.js            # lpac API 路由
+
+docs/
+└── lpac-integration.md  # 详细集成文档
+
+根目录:
+├── LPAC配置说明.md      # 快速配置指南
+└── test-lpac.js         # lpac 测试脚本
+
+## 🔧 配置方法
+
+### 方式 1: 继续使用模拟模式（无需改动）
+
+.env 文件已自动配置为模拟模式：
+```
+USE_MOCK_DATA=true
+```
+
+所有功能正常工作，使用模拟数据。
+
+### 方式 2: 启用真实 lpac 功能
+
+1. 安装 lpac（详见 docs/lpac-integration.md）
+2. 修改 .env:
+   ```
+   USE_MOCK_DATA=false
+   APDU_DRIVER=auto
+   ```
+3. 重启服务器
+
+## 🧪 测试 lpac
+
+运行测试脚本：
+```bash
+node test-lpac.js
+```
+
+或通过 API：
+```bash
+curl http://localhost:3000/api/lpac/status
+```
+
+## 📋 新增 API
+
+GET  /api/lpac/status   # 检查 lpac 状态
+GET  /api/lpac/version  # 获取 lpac 版本
+POST /api/lpac/sync     # 同步所有数据
+
+## 🎯 功能特点
+
+✅ 自动检测 lpac 可用性
+✅ 真实/模拟模式自动切换
+✅ 优雅降级（lpac 不可用时自动用模拟数据）
+✅ 透明接口（前端无需修改）
+✅ 详细日志记录
+
+## 📚 文档位置
+
+• 快速配置: LPAC配置说明.md
+• 详细文档: docs/lpac-integration.md
+• 测试脚本: test-lpac.js
+
+## 💡 使用建议
+
+### 开发阶段
+建议使用模拟模式（USE_MOCK_DATA=true）
+• 无需硬件
+• 开发快速
+• 测试方便
+
+### 实际使用
+配置真实 lpac（USE_MOCK_DATA=false）
+• 真实功能
+• 实际操作
+• 生产环境
+
+## ⚠️  注意事项
+
+1. 真实模式需要：
+   • 安装 lpac 软件
+   • PCSC 智能卡读卡器
+   • eUICC (eSIM) 卡片
+
+2. 如果 lpac 不可用：
+   • 系统自动回退到模拟模式
+   • 不会影响正常使用
+   • 会在日志中记录
+
+3. 数据同步：
+   • 真实模式会自动同步 lpac 数据到数据库
+   • 模拟模式只使用数据库数据
+
+## 🎉 开始使用
+
+当前配置: 模拟模式
+• 直接使用，无需额外配置
+• 所有功能正常工作
+• 适合学习和开发
+
+想要启用真实功能？
+• 查看 LPAC配置说明.md
+• 安装 lpac
+• 修改 .env 配置
+
+═══════════════════════════════════════════════════════════════
+
+项目现已完全支持 lpac 功能！🚀
+
